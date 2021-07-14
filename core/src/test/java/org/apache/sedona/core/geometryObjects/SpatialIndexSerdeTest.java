@@ -22,6 +22,7 @@ package org.apache.sedona.core.geometryObjects;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.apache.sedona.core.serde.spatialindex.SpatialIndexSerde;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
@@ -69,7 +70,7 @@ public class SpatialIndexSerdeTest
         compareSize(Quadtree.class);
         compareSize(STRtree.class);
 
-//        // workbench of compare time
+        // workbench of compare time
         compareTime(Quadtree.class);
         compareTime(STRtree.class);
     }

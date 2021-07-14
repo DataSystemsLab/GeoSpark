@@ -16,26 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.spark.sql
 
-package org.apache.sedona.core.serde;
+import org.apache.sedona.core.utils.SedonaConf
+import org.apache.sedona.sql.serde.SedonaSerializer
+import org.apache.spark.{SparkContext, SparkException}
 
-import com.esotericsoftware.kryo.Kryo;
-import org.apache.sedona.core.serde.shape.ShapeGeometrySerde;
-import org.apache.sedona.core.serde.spatialindex.SpatialIndexSerde;
-import org.apache.spark.serializer.KryoRegistrator;
+package object sedona_sql {
 
-/**
- * Register Kryo classes using the Geometry Serde(using the ShapeFile serialization)
- * and SpatialIndexSerde for index objects
- */
-public class SedonaKryoRegistrator
-        implements KryoRegistrator {
+  private val sparkContext = SparkContext.getActive.getOrElse(None)
+  private val sedonaConf = sparkContext match {
+    case sc: SparkContext => new SedonaConf(sc.conf)
+    case None => throw new SparkException("There is no active SparkContext. Hence, cannot create SedonaSerializer")
+  }
 
-    @Override
-    public void registerClasses(Kryo kryo) {
-        ShapeGeometrySerde serializer = new ShapeGeometrySerde();
-        SpatialIndexSerde indexSerializer = new SpatialIndexSerde();
+  private val userSerializerType = sedonaConf.getSerializerType
+  val sedonaSerializer: SedonaSerializer = SedonaSerializer.apply(userSerializerType)
 
-        SedonaKryoRegistratorHelper.registerClasses(kryo, serializer, indexSerializer);
-    }
 }

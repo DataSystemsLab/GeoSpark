@@ -18,8 +18,8 @@
  */
 package org.apache.spark.sql.sedona_sql.UDT
 
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.apache.spark.sql.types._
 import org.json4s.JsonDSL._
 import org.json4s.JsonAST.JValue
@@ -34,12 +34,12 @@ class GeometryUDT extends UserDefinedType[Geometry] {
   override def userClass: Class[Geometry] = classOf[Geometry]
 
   override def serialize(obj: Geometry): GenericArrayData =
-    new GenericArrayData(GeometrySerializer.serialize(obj))
+    new GenericArrayData(sedonaSerializer.serialize(obj))
 
   override def deserialize(datum: Any): Geometry = {
     datum match {
       case values: ArrayData =>
-        GeometrySerializer.deserialize(values)
+        sedonaSerializer.deserialize(values)
     }
   }
 

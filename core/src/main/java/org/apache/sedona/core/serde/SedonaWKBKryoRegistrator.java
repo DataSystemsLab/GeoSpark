@@ -20,20 +20,19 @@
 package org.apache.sedona.core.serde;
 
 import com.esotericsoftware.kryo.Kryo;
-import org.apache.sedona.core.serde.shape.ShapeGeometrySerde;
 import org.apache.sedona.core.serde.spatialindex.SpatialIndexSerde;
+import org.apache.sedona.core.serde.WKB.WKBGeometrySerde;
 import org.apache.spark.serializer.KryoRegistrator;
 
 /**
- * Register Kryo classes using the Geometry Serde(using the ShapeFile serialization)
- * and SpatialIndexSerde for index objects
+ * Register Kryo classes using the WKB Geometry Serde and SpatialIndexSerde for index objects
  */
-public class SedonaKryoRegistrator
+public class SedonaWKBKryoRegistrator
         implements KryoRegistrator {
 
     @Override
     public void registerClasses(Kryo kryo) {
-        ShapeGeometrySerde serializer = new ShapeGeometrySerde();
+        WKBGeometrySerde serializer = new WKBGeometrySerde();
         SpatialIndexSerde indexSerializer = new SpatialIndexSerde();
 
         SedonaKryoRegistratorHelper.registerClasses(kryo, serializer, indexSerializer);

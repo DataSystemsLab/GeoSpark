@@ -126,7 +126,7 @@ class functionTestScala extends TestBaseScala with Matchers with GeometrySample 
       val testtable = sparkSession.sql("select ST_GeomFromWKT('POLYGON((1 1, 1 5, 5 5, 1 1))') as a,ST_GeomFromWKT('POLYGON((2 2, 2 3, 3 3, 2 2))') as b")
       testtable.createOrReplaceTempView("testtable")
       val intersec = sparkSession.sql("select ST_Intersection(a,b) from testtable")
-      assert(intersec.take(1)(0).get(0).asInstanceOf[Geometry].toText.equals("POLYGON ((2 2, 2 3, 3 3, 2 2))"))
+      assert(intersec.take(1)(0).get(0).asInstanceOf[Geometry].toText.equals("POLYGON ((3 3, 2 2, 2 3, 3 3))"))
     }
 
     it("Passed ST_Intersection - intersects but right contains left") {
@@ -139,10 +139,10 @@ class functionTestScala extends TestBaseScala with Matchers with GeometrySample 
 
     it("Passed ST_Intersection - not intersects") {
 
-      val testtable = sparkSession.sql("select ST_GeomFromWKT('POLYGON((40 21, 40 22, 40 23, 40 21))') as a,ST_GeomFromWKT('POLYGON((2 2, 9 2, 9 9, 2 9, 2 2))') as b")
+      val testtable = sparkSession.sql("select ST_GeomFromWKT('POLYGON((40 21, 40 25, 35 20, 40 21))') as a,ST_GeomFromWKT('POLYGON((2 2, 9 2, 9 9, 2 9, 2 2))') as b")
       testtable.createOrReplaceTempView("testtable")
       val intersect = sparkSession.sql("select ST_Intersection(a,b) from testtable")
-      assert(intersect.take(1)(0).get(0).asInstanceOf[Geometry].toText.equals("POLYGON EMPTY"))
+      assert(intersect.take(1)(0).get(0).asInstanceOf[Geometry].toText.equals("MULTIPOLYGON EMPTY"))
     }
 
     it("Passed ST_IsValid") {

@@ -20,7 +20,6 @@ package org.apache.spark.sql.sedona_sql.expressions
 
 import org.apache.sedona.core.geometryObjects.Circle
 import org.apache.sedona.core.utils.GeomUtils
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, CodegenFallback, ExprCode}
@@ -28,6 +27,7 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, Generator}
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
 import org.apache.spark.sql.sedona_sql.UDT.GeometryUDT
 import org.apache.spark.sql.sedona_sql.expressions.implicits._
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.apache.spark.sql.sedona_sql.expressions.subdivide.GeometrySubDivider
 import org.apache.spark.sql.types.{ArrayType, _}
 import org.apache.spark.unsafe.types.UTF8String
@@ -72,11 +72,11 @@ case class ST_Distance(inputExpressions: Seq[Expression])
     val leftArray = inputExpressions(0).eval(inputRow).asInstanceOf[ArrayData]
     val rightArray = inputExpressions(1).eval(inputRow).asInstanceOf[ArrayData]
 
-    val leftGeometry = GeometrySerializer.deserialize(leftArray)
+    val leftGeometry = sedonaSerializer.deserialize(leftArray)
 
-    val rightGeometry = GeometrySerializer.deserialize(rightArray)
+    val rightGeometry = sedonaSerializer.deserialize(rightArray)
 
-    return leftGeometry.distance(rightGeometry)
+    leftGeometry.distance(rightGeometry)
   }
 
   override def dataType = DoubleType
@@ -93,8 +93,8 @@ case class ST_ConvexHull(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
-    new GenericArrayData(GeometrySerializer.serialize(geometry.convexHull()))
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    new GenericArrayData(sedonaSerializer.serialize(geometry.convexHull()))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -114,7 +114,7 @@ case class ST_NPoints(inputExpressions: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     inputExpressions.length match {
       case 1 =>
-        val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+        val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
         geometry.getCoordinates.length
       case _ => None
     }
@@ -137,13 +137,13 @@ case class ST_Buffer(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 2)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val buffer: Double = inputExpressions(1).eval(input) match {
       case a: Decimal => a.toDouble
       case a: Double => a
       case a: Int => a
     }
-    new GenericArrayData(GeometrySerializer.serialize(geometry.buffer(buffer)))
+    new GenericArrayData(sedonaSerializer.serialize(geometry.buffer(buffer)))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -163,8 +163,8 @@ case class ST_Envelope(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
-    new GenericArrayData(GeometrySerializer.serialize(geometry.getEnvelope()))
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    new GenericArrayData(sedonaSerializer.serialize(geometry.getEnvelope()))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -183,8 +183,8 @@ case class ST_Length(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
-    return geometry.getLength
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    geometry.getLength
   }
 
   override def dataType: DataType = DoubleType
@@ -203,8 +203,8 @@ case class ST_Area(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
-    return geometry.getArea
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    geometry.getArea
   }
 
   override def dataType: DataType = DoubleType
@@ -223,8 +223,8 @@ case class ST_Centroid(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
-    new GenericArrayData(GeometrySerializer.serialize(geometry.getCentroid()))
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    new GenericArrayData(sedonaSerializer.serialize(geometry.getCentroid()))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -244,7 +244,7 @@ case class ST_Transform(inputExpressions: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length >= 3 && inputExpressions.length <= 4)
 
-    val originalGeometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val originalGeometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val sourceCRScode = CRS.decode(inputExpressions(1).eval(input).asInstanceOf[UTF8String].toString)
     val targetCRScode = CRS.decode(inputExpressions(2).eval(input).asInstanceOf[UTF8String].toString)
 
@@ -256,7 +256,7 @@ case class ST_Transform(inputExpressions: Seq[Expression])
       transform = CRS.findMathTransform(sourceCRScode, targetCRScode, false)
     }
     val geom = JTS.transform(originalGeometry, transform)
-    new GenericArrayData(GeometrySerializer.serialize(geom))
+    new GenericArrayData(sedonaSerializer.serialize(geom))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -266,7 +266,7 @@ case class ST_Transform(inputExpressions: Seq[Expression])
 
 
 /**
-  * Return the intersection shape of two geometries. The return type is a geometry
+  * Return the intersection shape of two geometries. The type is a geometry
   *
   * @param inputExpressions
   */
@@ -279,26 +279,26 @@ case class ST_Intersection(inputExpressions: Seq[Expression])
 
   override def eval(inputRow: InternalRow): Any = {
     assert(inputExpressions.length == 2)
-    val leftgeometry = GeometrySerializer.deserialize(inputExpressions(0).eval(inputRow).asInstanceOf[ArrayData])
-    val rightgeometry = GeometrySerializer.deserialize(inputExpressions(1).eval(inputRow).asInstanceOf[ArrayData])
+    val leftgeometry = sedonaSerializer.deserialize(inputExpressions(0).eval(inputRow).asInstanceOf[ArrayData])
+    val rightgeometry = sedonaSerializer.deserialize(inputExpressions(1).eval(inputRow).asInstanceOf[ArrayData])
 
     val isIntersects = leftgeometry.intersects(rightgeometry)
     lazy val isLeftContainsRight = leftgeometry.contains(rightgeometry)
     lazy val isRightContainsLeft = rightgeometry.contains(leftgeometry)
 
     if (!isIntersects) {
-      return new GenericArrayData(GeometrySerializer.serialize(emptyPolygon))
+      new GenericArrayData(sedonaSerializer.serialize(emptyPolygon))
     }
 
     if (isIntersects && isLeftContainsRight) {
-      return new GenericArrayData(GeometrySerializer.serialize(rightgeometry))
+      new GenericArrayData(sedonaSerializer.serialize(rightgeometry))
     }
 
     if (isIntersects && isRightContainsLeft) {
-      return new GenericArrayData(GeometrySerializer.serialize(leftgeometry))
+      new GenericArrayData(sedonaSerializer.serialize(leftgeometry))
     }
 
-    return new GenericArrayData(GeometrySerializer.serialize(leftgeometry.intersection(rightgeometry)))
+    new GenericArrayData(sedonaSerializer.serialize(leftgeometry.intersection(rightgeometry)))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -321,7 +321,7 @@ case class ST_MakeValid(inputExpressions: Seq[Expression])
   override def eval(input: InternalRow): TraversableOnce[InternalRow] = {
     assert(inputExpressions.length == 2)
 
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val removeHoles = inputExpressions(1).eval(input).asInstanceOf[Boolean]
 
     // in order to do flatMap on java collections(util.List[Polygon])
@@ -345,7 +345,7 @@ case class ST_MakeValid(inputExpressions: Seq[Expression])
     }
 
     val result = validGeometry.toArray.map(g => {
-      val serializedGeometry = GeometrySerializer.serialize(g.asInstanceOf[Geometry])
+      val serializedGeometry = sedonaSerializer.serialize(g.asInstanceOf[Geometry])
       InternalRow(new GenericArrayData(serializedGeometry))
     })
 
@@ -369,7 +369,7 @@ case class ST_IsValid(inputExpressions: Seq[Expression])
     if (inputExpressions(0).eval(input).asInstanceOf[ArrayData] == null) {
       return null
     }
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val isvalidop = new IsValidOp(geometry)
     isvalidop.isValid
   }
@@ -391,11 +391,11 @@ case class ST_IsSimple(inputExpressions: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
 
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
 
     val isSimpleop = new IsSimpleOp(geometry)
 
-    return isSimpleop.isSimple
+    isSimpleop.isSimple
   }
 
   override def dataType: DataType = BooleanType
@@ -418,7 +418,7 @@ case class ST_SimplifyPreserveTopology(inputExpressions: Seq[Expression])
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 2)
 
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val distanceTolerance = inputExpressions(1).eval(input) match {
       case number: Decimal => number.toDouble
       case number: Double => number
@@ -426,7 +426,7 @@ case class ST_SimplifyPreserveTopology(inputExpressions: Seq[Expression])
     }
     val simplifiedGeometry = TopologyPreservingSimplifier.simplify(geometry, distanceTolerance)
 
-    new GenericArrayData(GeometrySerializer.serialize(simplifiedGeometry))
+    new GenericArrayData(sedonaSerializer.serialize(simplifiedGeometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -446,10 +446,10 @@ case class ST_PrecisionReduce(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 2)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val precisionScale = inputExpressions(1).eval(input).asInstanceOf[Int]
     val precisionReduce = new GeometryPrecisionReducer(new PrecisionModel(Math.pow(10, precisionScale)))
-    new GenericArrayData(GeometrySerializer.serialize(precisionReduce.reduce(geometry)))
+    new GenericArrayData(sedonaSerializer.serialize(precisionReduce.reduce(geometry)))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -463,7 +463,7 @@ case class ST_AsText(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     UTF8String.fromString(geometry.toText)
   }
 
@@ -495,7 +495,7 @@ case class ST_GeometryType(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     UTF8String.fromString("ST_" + geometry.getGeometryType)
   }
 
@@ -506,7 +506,7 @@ case class ST_GeometryType(inputExpressions: Seq[Expression])
 
 /**
   * Returns a LineString formed by sewing together the constituent line work of a MULTILINESTRING.
-  * Only works for MultiLineString. Using other geometry will return GEOMETRYCOLLECTION EMPTY
+  * Only works for MultiLineString. Using other geometry will GEOMETRYCOLLECTION EMPTY
   * If the MultiLineString is can't be merged, the original multilinestring is returned
   *
   * @param inputExpressions Geometry
@@ -522,7 +522,7 @@ case class ST_LineMerge(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
 
     val merger = new LineMerger()
 
@@ -537,13 +537,13 @@ case class ST_LineMerge(inputExpressions: Seq[Expression])
           // If the merger was able to join the lines, there will be only one element
           merger.getMergedLineStrings().iterator().next().asInstanceOf[Geometry]
         } else {
-          // if the merger couldn't join the lines, it will contain the individual lines, so return the input
+          // if the merger couldn't join the lines, it will contain the individual lines, so the input
           geometry
         }
       }
       case _ => emptyGeometry
     }
-    new GenericArrayData(GeometrySerializer.serialize(output))
+    new GenericArrayData(sedonaSerializer.serialize(output))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -1082,8 +1082,8 @@ case class ST_IsRing(inputExpressions: Seq[Expression])
 }
 
 /**
-  * Returns the number of Geometries. If geometry is a GEOMETRYCOLLECTION (or MULTI*) return the number of geometries,
-  * for single geometries will return 1
+  * Returns the number of Geometries. If geometry is a GEOMETRYCOLLECTION (or MULTI*) the number of geometries,
+  * for single geometries will 1
   *
   * This method implements the SQL/MM specification. SQL-MM 3: 9.1.4
   *
@@ -1095,7 +1095,7 @@ case class ST_NumGeometries(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     geometry.getNumGeometries()
   }
 
@@ -1115,7 +1115,7 @@ case class ST_FlipCoordinates(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length == 1)
-    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val geometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     GeomUtils.flipCoordinates(geometry)
     geometry.toGenericArrayData
   }

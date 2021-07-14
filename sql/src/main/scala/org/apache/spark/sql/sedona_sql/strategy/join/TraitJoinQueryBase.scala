@@ -21,11 +21,11 @@ package org.apache.spark.sql.sedona_sql.strategy.join
 import org.apache.sedona.core.geometryObjects.Circle
 import org.apache.sedona.core.spatialRDD.SpatialRDD
 import org.apache.sedona.core.utils.SedonaConf
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.{Expression, UnsafeRow}
 import org.apache.spark.sql.catalyst.util.ArrayData
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.locationtech.jts.geom.Geometry
 
 trait TraitJoinQueryBase {
@@ -42,7 +42,7 @@ trait TraitJoinQueryBase {
     spatialRdd.setRawSpatialRDD(
       rdd
         .map { x => {
-          val shape = GeometrySerializer.deserialize(shapeExpression.eval(x).asInstanceOf[ArrayData])
+          val shape = sedonaSerializer.deserialize(shapeExpression.eval(x).asInstanceOf[ArrayData])
           //logInfo(shape.toString)
           shape.setUserData(x.copy)
           shape
@@ -57,7 +57,7 @@ trait TraitJoinQueryBase {
     spatialRdd.setRawSpatialRDD(
       rdd
         .map { x => {
-          val shape = GeometrySerializer.deserialize(shapeExpression.eval(x).asInstanceOf[ArrayData])
+          val shape = sedonaSerializer.deserialize(shapeExpression.eval(x).asInstanceOf[ArrayData])
           val circle = new Circle(shape, boundRadius.eval(x).asInstanceOf[Double])
           circle.setUserData(x.copy)
           circle.asInstanceOf[Geometry]

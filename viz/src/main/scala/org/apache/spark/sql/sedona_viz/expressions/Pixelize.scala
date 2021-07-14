@@ -21,7 +21,6 @@ package org.apache.spark.sql.sedona_viz.expressions
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Output
 import org.apache.commons.io.output.ByteArrayOutputStream
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.sedona.viz.core.Serde.PixelSerializer
 import org.apache.sedona.viz.utils.{ColorizeOption, RasterizationUtils}
 import org.apache.spark.internal.Logging
@@ -30,6 +29,7 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
 import org.apache.spark.sql.sedona_viz.UDT.PixelUDT
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.apache.spark.sql.types.{ArrayType, DataType}
 import org.locationtech.jts.geom._
 
@@ -40,10 +40,10 @@ case class ST_Pixelize(inputExpressions: Seq[Expression])
 
   override def eval(input: InternalRow): Any = {
     assert(inputExpressions.length <= 5)
-    val inputGeometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    val inputGeometry = sedonaSerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
     val resolutionX = inputExpressions(1).eval(input).asInstanceOf[Integer]
     val resolutionY = inputExpressions(2).eval(input).asInstanceOf[Integer]
-    val boundary = GeometrySerializer.deserialize(inputExpressions(3).eval(input).asInstanceOf[ArrayData]).getEnvelopeInternal
+    val boundary = sedonaSerializer.deserialize(inputExpressions(3).eval(input).asInstanceOf[ArrayData]).getEnvelopeInternal
     val reverseCoordinate = false
     val pixels = inputGeometry match {
       case geometry: LineString => {

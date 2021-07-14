@@ -19,10 +19,10 @@
 
 package org.apache.spark.sql.sedona_sql.expressions
 
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.locationtech.jts.geom.{Geometry, GeometryFactory, Point}
 
 object implicits {
@@ -30,7 +30,7 @@ object implicits {
   implicit class InputExpressionEnhancer(inputExpression: Expression) {
     def toGeometry(input: InternalRow): Geometry = {
       inputExpression.eval(input).asInstanceOf[ArrayData] match {
-        case arrData: ArrayData => GeometrySerializer.deserialize(arrData)
+        case arrData: ArrayData => sedonaSerializer.deserialize(arrData)
         case _ => null
       }
     }
@@ -58,7 +58,7 @@ object implicits {
   implicit class ArrayDataEnhancer(arrayData: ArrayData) {
     def toGeometry: Geometry = {
       arrayData match {
-        case arrData: ArrayData => GeometrySerializer.deserialize(arrData)
+        case arrData: ArrayData => sedonaSerializer.deserialize(arrData)
         case _ => null
       }
     }
@@ -68,7 +68,7 @@ object implicits {
     private val geometryFactory = new GeometryFactory()
 
     def toGenericArrayData: GenericArrayData =
-      new GenericArrayData(GeometrySerializer.serialize(geom))
+      new GenericArrayData(sedonaSerializer.serialize(geom))
 
     def getPoints: Array[Point] =
       geom.getCoordinates.map(coordinate => geometryFactory.createPoint(coordinate))

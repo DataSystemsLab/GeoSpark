@@ -19,67 +19,20 @@
 
 package org.apache.sedona.sql;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sedona.core.enums.GridType;
 import org.apache.sedona.core.enums.IndexType;
 import org.apache.sedona.core.formatMapper.shapefileParser.ShapefileReader;
-import org.apache.sedona.core.serde.SedonaKryoRegistrator;
 import org.apache.sedona.core.spatialOperator.JoinQuery;
 import org.apache.sedona.core.spatialRDD.CircleRDD;
 import org.apache.sedona.core.spatialRDD.SpatialRDD;
 import org.apache.sedona.sql.utils.Adapter;
-import org.apache.sedona.sql.utils.SedonaSQLRegistrator;
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.Serializable;
-
-public class adapterTestJava
-        implements Serializable
-{
-    public static String resourceFolder = System.getProperty("user.dir") + "/../core/src/test/resources/";
-    public static String mixedWktGeometryInputLocation = resourceFolder + "county_small.tsv";
-    public static String mixedWkbGeometryInputLocation = resourceFolder + "county_small_wkb.tsv";
-    public static String csvPointInputLocation = resourceFolder + "arealm.csv";
-    public static String shapefileInputLocation = resourceFolder + "shapefiles/polygon";
-    protected static SparkConf conf;
-    protected static JavaSparkContext sc;
-    protected static SparkSession sparkSession;
-
-    /**
-     * Once executed before all.
-     */
-    @BeforeClass
-    public static void onceExecutedBeforeAll()
-    {
-        conf = new SparkConf().setAppName("adapterTestJava").setMaster("local[2]");
-        conf.set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getName());
-        conf.set("spark.kryo.registrator", SedonaKryoRegistrator.class.getName());
-
-        sc = new JavaSparkContext(conf);
-        sparkSession = new SparkSession(sc.sc());
-        Logger.getLogger("org").setLevel(Level.WARN);
-        Logger.getLogger("akka").setLevel(Level.WARN);
-        SedonaSQLRegistrator.registerAll(sparkSession.sqlContext());
-    }
-
-    /**
-     * Tear down.
-     */
-    @AfterClass
-    public static void TearDown()
-    {
-        SedonaSQLRegistrator.dropAll(sparkSession);
-        sparkSession.stop();
-    }
+public class adapterTestJava extends TestBaseWKBSerdeJava {
 
     @Test
     public void testReadCsv()

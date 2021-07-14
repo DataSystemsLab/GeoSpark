@@ -19,10 +19,7 @@
 
 package org.apache.sedona.core.utils;
 
-import org.apache.sedona.core.enums.GridType;
-import org.apache.sedona.core.enums.IndexType;
-import org.apache.sedona.core.enums.JoinBuildSide;
-import org.apache.sedona.core.enums.JoinSparitionDominantSide;
+import org.apache.sedona.core.enums.*;
 import org.apache.spark.SparkConf;
 import org.locationtech.jts.geom.Envelope;
 
@@ -38,6 +35,8 @@ public class SedonaConf
     private Boolean useIndex = false;
 
     private IndexType indexType = IndexType.QUADTREE;
+
+    private SerializerType serializerType = SerializerType.SHAPE;
 
     // Parameters for JoinQuery including RangeJoin and DistanceJoin
 
@@ -57,6 +56,8 @@ public class SedonaConf
     {
         this.useIndex = sparkConf.getBoolean("sedona.global.index", true);
         this.indexType = IndexType.getIndexType(sparkConf.get("sedona.global.indextype", "quadtree"));
+        this.serializerType = SerializerType.getSerializerType(sparkConf.get("sedona.serializer.type", "shape"));
+
         this.joinApproximateTotalCount = sparkConf.getLong("sedona.join.approxcount", -1);
         String[] boundaryString = sparkConf.get("sedona.join.boundary", "0,0,0,0").split(",");
         this.datasetBoundary = new Envelope(Double.parseDouble(boundaryString[0]), Double.parseDouble(boundaryString[0]),
@@ -81,6 +82,8 @@ public class SedonaConf
     {
         return indexType;
     }
+
+    public SerializerType getSerializerType() { return serializerType; }
 
     public void setIndexType(IndexType indexType)
     {

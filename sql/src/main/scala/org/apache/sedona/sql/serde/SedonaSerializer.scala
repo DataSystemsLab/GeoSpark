@@ -16,26 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.sedona.sql.serde
 
-package org.apache.sedona.core.serde;
+import org.apache.sedona.core.enums.SerializerType
+import org.apache.spark.sql.catalyst.util.ArrayData
+import org.locationtech.jts.geom.Geometry
 
-import com.esotericsoftware.kryo.Kryo;
-import org.apache.sedona.core.serde.shape.ShapeGeometrySerde;
-import org.apache.sedona.core.serde.spatialindex.SpatialIndexSerde;
-import org.apache.spark.serializer.KryoRegistrator;
+trait SedonaSerializer {
 
-/**
- * Register Kryo classes using the Geometry Serde(using the ShapeFile serialization)
- * and SpatialIndexSerde for index objects
- */
-public class SedonaKryoRegistrator
-        implements KryoRegistrator {
+  def serialize(geometry: Geometry): Array[Byte]
 
-    @Override
-    public void registerClasses(Kryo kryo) {
-        ShapeGeometrySerde serializer = new ShapeGeometrySerde();
-        SpatialIndexSerde indexSerializer = new SpatialIndexSerde();
+  def deserialize(values: ArrayData): Geometry
 
-        SedonaKryoRegistratorHelper.registerClasses(kryo, serializer, indexSerializer);
+}
+
+object SedonaSerializer {
+
+  def apply(serializerType: SerializerType): SedonaSerializer = {
+    serializerType match {
+      case SerializerType.SHAPE => ShapeGeometrySerializer
+      case SerializerType.WKB => WKBGeometrySerializer
+      case _ => ShapeGeometrySerializer
     }
+  }
 }

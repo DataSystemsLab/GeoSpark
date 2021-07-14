@@ -20,12 +20,12 @@ package org.apache.spark.sql.sedona_sql.expressions
 
 import org.apache.sedona.core.enums.{FileDataSplitter, GeometryType}
 import org.apache.sedona.core.formatMapper.FormatMapper
-import org.apache.sedona.sql.utils.GeometrySerializer
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.util.GenericArrayData
 import org.apache.spark.sql.sedona_sql.UDT.GeometryUDT
+import org.apache.spark.sql.sedona_sql.sedonaSerializer
 import org.apache.spark.sql.types.{DataType, Decimal}
 import org.apache.spark.unsafe.types.UTF8String
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
@@ -48,7 +48,8 @@ case class ST_PointFromText(inputExpressions: Seq[Expression])
     var fileDataSplitter = FileDataSplitter.getFileDataSplitter(geomFormat)
     var formatMapper = new FormatMapper(fileDataSplitter, false, GeometryType.POINT)
     var geometry = formatMapper.readGeometry(geomString)
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -74,7 +75,7 @@ case class ST_PolygonFromText(inputExpressions: Seq[Expression])
     var fileDataSplitter = FileDataSplitter.getFileDataSplitter(geomFormat)
     var formatMapper = new FormatMapper(fileDataSplitter, false, GeometryType.POLYGON)
     var geometry = formatMapper.readGeometry(geomString)
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -102,7 +103,7 @@ case class ST_LineStringFromText(inputExpressions: Seq[Expression])
     var formatMapper = new FormatMapper(fileDataSplitter, false, GeometryType.LINESTRING)
     var geometry = formatMapper.readGeometry(geomString)
 
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -127,7 +128,7 @@ case class ST_GeomFromWKT(inputExpressions: Seq[Expression])
     var fileDataSplitter = FileDataSplitter.WKT
     var formatMapper = new FormatMapper(fileDataSplitter, false)
     var geometry = formatMapper.readGeometry(geomString)
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -152,7 +153,7 @@ case class ST_GeomFromText(inputExpressions: Seq[Expression])
     var fileDataSplitter = FileDataSplitter.WKT
     var formatMapper = new FormatMapper(fileDataSplitter, false)
     var geometry = formatMapper.readGeometry(geomString)
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -177,7 +178,7 @@ case class ST_GeomFromWKB(inputExpressions: Seq[Expression])
     var fileDataSplitter = FileDataSplitter.WKB
     var formatMapper = new FormatMapper(fileDataSplitter, false)
     var geometry = formatMapper.readGeometry(geomString)
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -208,7 +209,7 @@ case class ST_GeomFromGeoJSON(inputExpressions: Seq[Expression])
     if (inputExpressions.length > 1) {
       geometry.setUserData(generateUserData(minInputLength, inputExpressions, inputRow))
     }
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -238,7 +239,7 @@ case class ST_Point(inputExpressions: Seq[Expression])
 
     var geometryFactory = new GeometryFactory()
     var geometry = geometryFactory.createPoint(new Coordinate(x, y))
-    return new GenericArrayData(GeometrySerializer.serialize(geometry))
+    new GenericArrayData(sedonaSerializer.serialize(geometry))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -286,7 +287,7 @@ case class ST_PolygonFromEnvelope(inputExpressions: Seq[Expression]) extends Exp
     coordinates(4) = coordinates(0)
     val geometryFactory = new GeometryFactory()
     val polygon = geometryFactory.createPolygon(coordinates)
-    new GenericArrayData(GeometrySerializer.serialize(polygon))
+    new GenericArrayData(sedonaSerializer.serialize(polygon))
   }
 
   override def dataType: DataType = GeometryUDT
@@ -301,7 +302,7 @@ trait UserDataGeneratator {
     for (i <- minInputLength + 1 to inputExpressions.length - 1) {
       userData = userData + "\t" + inputExpressions(i).eval(inputRow).asInstanceOf[UTF8String].toString
     }
-    return userData
+    userData
   }
 }
 
