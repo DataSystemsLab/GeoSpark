@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.apache.log4j.Logger;
+import org.apache.sedona.core.enums.SerializerType;
 import org.apache.sedona.core.formatMapper.shapefileParser.parseUtils.shp.ShapeSerde;
 import org.apache.sedona.core.serde.GeometrySerde;
 import org.locationtech.jts.geom.Geometry;
@@ -34,16 +35,23 @@ import org.locationtech.jts.geom.GeometryFactory;
 public class ShapeGeometrySerde
         extends GeometrySerde
 {
-
+    @Override
     protected void writeGeometry(Kryo kryo, Output out, Geometry geometry)
     {
+        // Mainly used by the python binding to know in which serde to use
+        writeSerializedType(out, SerializerType.SHAPE);
+
         byte[] data = ShapeSerde.serialize(geometry);
         out.write(data, 0, data.length);
         writeUserData(kryo, out, geometry);
     }
 
+    @Override
     protected Geometry readGeometry(Kryo kryo, Input input)
     {
+        // Skip the unneeded Serialized Type
+        input.readInt(true);
+
         Geometry geometry = ShapeSerde.deserialize(input, geometryFactory);
         geometry.setUserData(readUserData(kryo, input));
         return geometry;

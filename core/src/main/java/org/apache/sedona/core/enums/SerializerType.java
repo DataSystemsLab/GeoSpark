@@ -23,9 +23,20 @@ package org.apache.sedona.core.enums;
  */
 public enum SerializerType {
     
-    SHAPE,
-    WKB;
-    
+    SHAPE(0),
+    WKB(1);
+
+    final int id;
+
+    public int getId() {
+        return id;
+    }
+
+    SerializerType(int id)
+    {
+        this.id = id;
+    }
+
     /**
      * Gets the serializer type.
      *
@@ -36,6 +47,16 @@ public enum SerializerType {
     {
         for (SerializerType me : SerializerType.values()) {
             if (me.name().equalsIgnoreCase(str)) { return me; }
+        }
+        return null;
+    }
+
+    public static SerializerType fromId(int id)
+    {
+        for (SerializerType type : values()) {
+            if (type.id == id) {
+                return type;
+            }
         }
         return null;
     }

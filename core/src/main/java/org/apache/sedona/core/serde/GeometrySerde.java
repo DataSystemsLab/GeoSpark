@@ -26,6 +26,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.sedona.core.enums.SerializerType;
 import org.apache.sedona.core.geometryObjects.Circle;
 import org.locationtech.jts.geom.*;
 
@@ -45,6 +46,16 @@ abstract public class GeometrySerde extends Serializer {
 
     protected static final Logger log = Logger.getLogger(GeometrySerde.class.getName());
     protected static final GeometryFactory geometryFactory = new GeometryFactory();
+
+    /**
+     * Write the serialized type as Int from {@link org.apache.sedona.core.enums.SerializerType}
+     * Used mainly by the python binding to know which serde to use
+     * @param out kryo output stream
+     * @param type SerializerType
+     */
+    protected void writeSerializedType(Output out, SerializerType type){
+        out.writeInt(type.getId(), true);
+    }
 
     @Override
     public void write(Kryo kryo, Output out, Object object)
